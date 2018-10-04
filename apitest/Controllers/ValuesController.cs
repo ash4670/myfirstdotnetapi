@@ -8,21 +8,23 @@ using System.Data;
 using System.Data.SqlClient;
 using apitest.model;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.Extensions.Configuration;
 
 namespace apitest.Controllers
 {
-    [DisableCors]
+   // [DisableCors]
     [Route("api/[controller]")]
     [ApiController]
     public class ValuesController : ControllerBase
     {
+     
         string connstr = "Data Source=ASHLAP\\MSSQLSERVER12;Initial Catalog=nrc_sql;Integrated Security=true";
         // GET api/values
         [HttpGet]
         public ActionResult<List<dish>> Get()//
         {
             List<dish> mylist =new List<dish>();
-            string ls_sql = "select name,image,category,label,price,description from dishes";
+            string ls_sql = "select id,name,image,category,label,price,description from dishes";
             using (SqlConnection conn = new SqlConnection(connstr))
             {
                 List<dish> mydisharr = new List<dish>()  ;
@@ -34,9 +36,9 @@ namespace apitest.Controllers
                     dish ld;
                     while (rd.Read())
                        {
-                        ld = new dish{name = (string)rd.GetValue(0), image = (string)rd.GetValue(1),
-                            category = (string)rd.GetValue(2), label = (string)rd.GetValue(3),
-                            price = (string)rd.GetValue(4),description = (string)rd.GetValue(5) };    
+                        ld = new dish{id= (int) rd.GetValue(0) ,name = (string)rd.GetValue(1), image = (string)rd.GetValue(2),
+                            category = (string)rd.GetValue(3), label = (string)rd.GetValue(4),
+                            price = (string)rd.GetValue(5),description = (string)rd.GetValue(6) };    
                         mydisharr.Add(ld);
                     }
                     rd.Close();
@@ -62,17 +64,45 @@ namespace apitest.Controllers
         }
 
         // GET api/values/5
-        [HttpGet ,Route("api/values/name/{qry}")]
-        public ActionResult<string> Getname(string qry)
-        {
-            return  "hello"+qry;
-        }
+        //[Route("{qry:string}")]
+        //public ActionResult<string> Getname(string qry)
+        //{
+        //    return  "hello "+qry;
+        //}
 
         // POST api/values
         [HttpPost]
-        public void Post([FromBody] string value)
+
+        public ActionResult Post(dish[] dishes)
         {
+            using (SqlConnection conn = new SqlConnection(connstr))
+            {
+                SqlCommand SqlCmd = new SqlCommand();
+                conn.Open();
+                SqlCmd.Connection = conn;
+                foreach (var ldish in dishes)
+                {
+                    try
+                    {
+                        string strupdate = "update dishes set name='" + ldish.name + "' , image='" + ldish.image + "' ,category='" + ldish.category + "' , label='" + ldish.label + "' ,price='" + ldish.price + "' ,description= '" + ldish.description + "'";
+                        strupdate += " where id= " + ldish.id;
+                        ;
+
+                        SqlCmd.CommandText = strupdate;
+                        SqlCmd.ExecuteNonQuery();
+                    }
+                    catch (Exception e)
+                    { }
+
+                }
+                return Ok();
+            }
         }
+
+
+
+
+
 
         // PUT api/values/5
         [HttpPut("{id}")]
